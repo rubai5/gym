@@ -304,3 +304,15 @@ class ErdosGameEnv(gym.Env):
         self.state = np.concatenate([A, B])
         
         return self.state
+
+    def ground_truth(self):
+        potentials = []
+        potentials.append(self.potential_fn(self.state[:self.K+1]))
+        potentials.append(self.potential_fn(self.state[self.K+1:]))
+        return np.array(potentials)
+
+    def labels(self):
+        potentials = self.ground_truth()
+        set_labels = (potentials == np.max(potentials)).astype("int")
+        return set_labels
+
