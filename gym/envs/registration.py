@@ -2,6 +2,7 @@ import logging
 import pkg_resources
 import re
 from gym import error
+import random
 import warnings
 
 logger = logging.getLogger(__name__)
@@ -79,6 +80,7 @@ class EnvSpec(object):
 
     def make(self):
         """Instantiates an instance of the environment with appropriate kwargs"""
+        print("calling make function in EnvSpecs class", "with environment id", self._entry_point, type(self._entry_point))
         if self._entry_point is None:
             raise error.Error('Attempting to make deprecated env {}. (HINT: is there a newer registered version of this env?)'.format(self.id))
 
@@ -92,6 +94,36 @@ class EnvSpec(object):
         env.unwrapped._spec = self
 
         return env
+
+
+    def check_args(self, names_and_args):
+        arg_names = ["K", "potential", "unif_prob", "geo_prob", "diverse_prob", "state_unif_prob",
+                      "high_one_prob",
+                    "adverse_set_prob", "geo_high", "unif_high", "geo_ps", "hash_states"]
+        arg_types = [int, float, float, float, float, float, float, float, int, int, list, dict]
+        args = []
+        for i, arg in enumerate(names_and_args):
+            assert arg[0] == arg_names[i], "Name doesn't match!"
+            assert type(arg[1]) == arg_types[i], "Types don't match!"
+            args.append(arg[1])
+        
+        return args
+
+
+    def make_erdos(self, names_and_args):
+        """Instantiates an instance of erdos environment with arguments that were given"""
+        
+        cls = load(self._entry_point)
+
+        # Check that args are correct and then use
+        args = self.check_args(names_and_args)
+        env = cls(*args)
+
+        # Make the enviroment aware of which spec it came from.
+        env.unwrapped._spec = self
+
+        return env
+
 
     def __repr__(self):
         return "EnvSpec({})".format(self.id)
@@ -116,17 +148,20 @@ class EnvRegistry(object):
     def __init__(self):
         self.env_specs = {}
 
-    def make(self, id):
+    def make(self, id, names_and_args=None):
         logger.info('Making new env: %s', id)
         spec = self.spec(id)
-        env = spec.make()
+        if id == "ErdosGame-v0":
+            assert names_and_args != None, "Names and args cannot be None for ErdosGame"
+            env = spec.make_erdos(names_and_args)
+        else:
+            env = spec.make()
         if (env.spec.timestep_limit is not None) and not spec.tags.get('vnc'):
             from gym.wrappers.time_limit import TimeLimit
             env = TimeLimit(env,
                             max_episode_steps=env.spec.max_episode_steps,
                             max_episode_seconds=env.spec.max_episode_seconds)
         return env
-
 
     def all(self):
         return self.env_specs.values()
@@ -160,8 +195,9 @@ registry = EnvRegistry()
 def register(id, **kwargs):
     return registry.register(id, **kwargs)
 
-def make(id):
-    return registry.make(id)
+def make(id, names_and_args=None):
+    return registry.make(id, names_and_args=names_and_args)
 
 def spec(id):
+    print("calling spec function from registration.py")
     return registry.spec(id)

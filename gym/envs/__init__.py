@@ -1,5 +1,15 @@
 from gym.envs.registration import registry, register, make, spec
 
+# Maithra
+# ---------------------------------------
+
+register(
+    id='ErdosGame-v0',
+    entry_point='gym.envs.maithra:ErdosGameEnv',
+    max_episode_steps=100,
+)
+
+
 # Algorithmic
 # ----------------------------------------
 
