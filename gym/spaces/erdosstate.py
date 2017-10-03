@@ -150,7 +150,7 @@ class ErdosState(gym.Space):
         
         # edge case: n = 1
         if n == 1:
-            return np.array([1.0])
+            return np.array([self.potential])
 
         values = [np.random.uniform() for i in range(n-1)]
         values.extend([0,1])
@@ -191,7 +191,7 @@ class ErdosState(gym.Space):
 
         # allocate potential
         xs = self.simplex_sampler(num_idxs)
-        
+
         # fill with appropriate number of pieces adding on any remaindr
         remainder = 0
         state = np.zeros(self.K+1, dtype=int)
