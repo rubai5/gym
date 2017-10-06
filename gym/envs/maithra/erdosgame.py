@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class ErdosGameEnv(gym.Env):
     
-    def __init__(self, K, potential, unif_prob,
+    def __init__(self, K, potential, unif_prob, 
                  geo_prob, diverse_prob, state_unif_prob, high_one_prob,
                 adverse_set_prob, disj_supp_prob, geo_high, unif_high,
                 geo_ps=[0.45, 0.5, 0.6, 0.7, 0.8], hash_states=None):
@@ -25,9 +25,16 @@ class ErdosGameEnv(gym.Env):
         self.geo_prob = geo_prob
         self.diverse_prob = diverse_prob
         self.state_unif_prob = state_unif_prob
+        assert(self.state_unif_prob + self.diverse_prob + self.geo_prob + self.unif_prob == 1), \
+               "State generation probabilities do not add to 1"
+        
         self.high_one_prob = high_one_prob
+
         self.adverse_set_prob = adverse_set_prob
         self.disj_supp_prob = disj_supp_prob
+        assert(self.adverse_set_prob + self.disj_supp_prob <= 1), \
+               "Attacker strategy probabilities do not add to 1"
+
         self.geo_high = geo_high
         self.unif_high = unif_high
         self.geo_ps = geo_ps

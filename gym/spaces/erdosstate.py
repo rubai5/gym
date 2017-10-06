@@ -14,7 +14,7 @@ class ErdosState(gym.Space):
     def __init__(self, K, potential, weights, dist_probs, high_one_prob, geo_high, 
                  unif_high, geo_ps=[0.45, 0.5, 0.6, 0.7, 0.8]):
         
-        assert K <= 40, "K is too large! Computing 2^K may lead to underflow"
+        assert K <= 40, "K is too large! Computing 2^-K may be very slow and inaccurate"
         
         self.K = K
         self.potential = potential

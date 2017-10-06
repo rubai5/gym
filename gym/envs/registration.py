@@ -96,28 +96,13 @@ class EnvSpec(object):
         return env
 
 
-    def check_args(self, names_and_args):
-        arg_names = ["K", "potential", "unif_prob", "geo_prob", "diverse_prob", "state_unif_prob",
-                      "high_one_prob",
-                    "adverse_set_prob", "disj_supp_prob", "geo_high", "unif_high", "geo_ps", "hash_states"]
-        arg_types = [int, float, float, float, float, float, float, float, float, int, int, list, dict]
-        args = []
-        for i, arg in enumerate(names_and_args):
-            assert arg[0] == arg_names[i], "Name doesn't match!"
-            assert type(arg[1]) == arg_types[i], "Types don't match!"
-            args.append(arg[1])
-        
-        return args
-
-
-    def make_erdos(self, names_and_args):
+    def make_erdos(self, **kwargs):
         """Instantiates an instance of erdos environment with arguments that were given"""
         
         cls = load(self._entry_point)
 
         # Check that args are correct and then use
-        args = self.check_args(names_and_args)
-        env = cls(*args)
+        env = cls(**kwargs)
 
         # Make the enviroment aware of which spec it came from.
         env.unwrapped._spec = self
@@ -148,12 +133,12 @@ class EnvRegistry(object):
     def __init__(self):
         self.env_specs = {}
 
-    def make(self, id, names_and_args=None):
+    def make(self, id, **kwargs):
         logger.info('Making new env: %s', id)
         spec = self.spec(id)
         if id == "ErdosGame-v0":
-            assert names_and_args != None, "Names and args cannot be None for ErdosGame"
-            env = spec.make_erdos(names_and_args)
+            assert kwargs != None, "Erdos game must take some input values"
+            env = spec.make_erdos(**kwargs)
         else:
             env = spec.make()
         if (env.spec.timestep_limit is not None) and not spec.tags.get('vnc'):
@@ -195,8 +180,8 @@ registry = EnvRegistry()
 def register(id, **kwargs):
     return registry.register(id, **kwargs)
 
-def make(id, names_and_args=None):
-    return registry.make(id, names_and_args=names_and_args)
+def make(id, **kwargs):
+    return registry.make(id, **kwargs)
 
 def spec(id):
     print("calling spec function from registration.py")
