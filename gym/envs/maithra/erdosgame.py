@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class ErdosGameEnv(gym.Env):
     
-    def __init__(self, K, potential, unif_prob, 
+    def __init__(self, K, potential, unif_prob,
                  geo_prob, diverse_prob, state_unif_prob, high_one_prob,
                 adverse_set_prob, disj_supp_prob, geo_high, unif_high,
                 geo_ps=[0.45, 0.5, 0.6, 0.7, 0.8], hash_states=None):
