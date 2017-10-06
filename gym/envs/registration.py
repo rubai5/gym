@@ -99,8 +99,8 @@ class EnvSpec(object):
     def check_args(self, names_and_args):
         arg_names = ["K", "potential", "unif_prob", "geo_prob", "diverse_prob", "state_unif_prob",
                       "high_one_prob",
-                    "adverse_set_prob", "geo_high", "unif_high", "geo_ps", "hash_states"]
-        arg_types = [int, float, float, float, float, float, float, float, int, int, list, dict]
+                    "adverse_set_prob", "disj_supp_prob", "geo_high", "unif_high", "geo_ps", "hash_states"]
+        arg_types = [int, float, float, float, float, float, float, float, float, int, int, list, dict]
         args = []
         for i, arg in enumerate(names_and_args):
             assert arg[0] == arg_names[i], "Name doesn't match!"

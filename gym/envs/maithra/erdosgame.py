@@ -17,7 +17,7 @@ class ErdosGameEnv(gym.Env):
     
     def __init__(self, K, potential, unif_prob, 
                  geo_prob, diverse_prob, state_unif_prob, high_one_prob,
-                adverse_set_prob, geo_high, unif_high,
+                adverse_set_prob, disj_supp_prob, geo_high, unif_high,
                 geo_ps=[0.45, 0.5, 0.6, 0.7, 0.8], hash_states=None):
         
         self.K = K
@@ -27,6 +27,7 @@ class ErdosGameEnv(gym.Env):
         self.state_unif_prob = state_unif_prob
         self.high_one_prob = high_one_prob
         self.adverse_set_prob = adverse_set_prob
+        self.disj_supp_prob = disj_supp_prob
         self.geo_high = geo_high
         self.unif_high = unif_high
         self.geo_ps = geo_ps
@@ -144,15 +145,23 @@ class ErdosGameEnv(gym.Env):
             A, B = self.propose_sets_opt()
 
         else:
-            adversarial = np.random.binomial(1, self.adverse_set_prob)
+            propose_types = ["adversarial", "disj_support", "opt"]
+            idx_arr = np.random.multinomial(1, [self.adverse_set_prob, self.disj_supp_prob, \
+                                            1 - self.adverse_set_prob - self.disj_supp_prob])
+            idx = np.argmax(idx_arr)
+            propose_type = propose_types[idx]
 
-            if adversarial:
+            if propose_type == "adversarial":
                 #logging.info("proposing with adversarial")
                 assert self.model_state != [], "cannot propose adversarial sets with empty model state - call set_model_state() first"
                 A, B = self.propose_sets_adversarial()
-            else:
-                #logging.info('proposing with opt')
+            elif propose_type == "disj_support":
+                #logging.info('proposing with disj support')
+                A, B = self.propose_sets_disj_support()
+            elif propose_type == "opt":
                 A, B = self.propose_sets_opt()
+            else:
+                 raise ValueError("unsupported set propose_type")
 
         return A, B
 
@@ -190,6 +199,55 @@ class ErdosGameEnv(gym.Env):
                     B[l] += larger
 
         return A, B
+
+    def propose_sets_disj_support(self):
+        # proposes sets of disjoint support
+        # with varying potential split
+        
+        A = np.zeros(self.K+1, dtype=int)
+        B = np.zeros(self.K+1, dtype=int)
+
+        nonzeros = np.where(self.game_state > 0)[0]
+        thresholds = [1./3, 5./16, 14./32]
+        _ = np.random.multinomial(3, [0.8, 0.1, 0.1])
+        _ = np.argmax(_)
+        threshold = thresholds[_]
+        idxs = nonzeros[np.random.permutation(len(nonzeros))]
+        
+        potA = self.potential_fn(A)
+        potB = self.potential_fn(B)
+        for idx in idxs:
+            l_pieces = self.game_state[idx]
+            # check to see what potential of pieces is
+            # if potential very large, fraction, equally divide
+            if l_pieces*self.weights[idx] >= self.potential/2.:
+                # try to equally divide
+                if l_pieces % 2 == 0:
+                    pieces = int(l_pieces/2)
+                    A[idx] += pieces
+                    B[idx] += pieces
+                    potA += (l_pieces*self.weights[idx])/2.
+                    potB += (l_pieces*self.weights[idx])/2.
+                else:
+                    A[idx] += int(l_pieces/2)
+                    B[idx] += (int(l_pieces/2) + 1)
+                    potA += int(l_pieces/2)*self.weights[idx]
+                    potB += (int(l_pieces/2) + 1)*self.weights[idx]
+
+            else:
+                if potA >= threshold*self.potential:
+                    B[idx] += l_pieces
+                    potB += l_pieces*self.weights[idx]
+                else:
+                    A[idx] += l_pieces
+                    potA += l_pieces*self.weights[idx]
+        # vary which of A or B is underweighted set
+        p = np.random.uniform(low=0, high=1)
+        if p >= 0.5:
+            return B, A
+        else:
+            return A, B
+
 
     def propose_sets_adversarial(self):
         # proposes adversarial sets for current
