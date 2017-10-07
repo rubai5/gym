@@ -12,7 +12,7 @@ class ErdosState(gym.Space):
     """
     
     def __init__(self, K, potential, weights, dist_probs, high_one_prob, geo_high, 
-                 unif_high, geo_ps=[0.45, 0.5, 0.6, 0.7, 0.8]):
+                 unif_high, geo_ps, train_attacker):
         
         assert K <= 40, "K is too large! Computing 2^-K may be very slow and inaccurate"
         
@@ -27,6 +27,8 @@ class ErdosState(gym.Space):
         self.geo_high = geo_high
         self.unif_high = unif_high
         self.geo_ps = geo_ps
+        self.train_attacker = train_attacker
+
         self.states_table = None
         self.all_states_table = None
 
@@ -293,6 +295,9 @@ class ErdosState(gym.Space):
     
     @property
     def shape(self):
-        return (2*self.K + 2,)
+        if self.train_attacker:
+            return (self.K+1,)
+        else:
+            return (2*self.K + 2,)
     def __repr__(self):
         return "ErdosGame" + str(self.shape)

@@ -9,6 +9,12 @@ register(
     max_episode_steps=100,
 )
 
+register(
+    id='ErdosGameAttacker-v0',
+    entry_point='gym.envs.maithra:ErdosGameAttackerEnv',
+    max_episode_steps=100,
+)
+
 
 # Algorithmic
 # ----------------------------------------

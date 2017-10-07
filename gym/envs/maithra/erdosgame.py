@@ -17,7 +17,7 @@ class ErdosGameEnv(gym.Env):
     
     def __init__(self, K, potential, unif_prob, 
                  geo_prob, diverse_prob, state_unif_prob, high_one_prob,
-                adverse_set_prob, disj_supp_prob, geo_high, unif_high,
+                adverse_set_prob, disj_supp_prob, geo_high, unif_high, train_attacker=False,
                 geo_ps=[0.45, 0.5, 0.6, 0.7, 0.8], hash_states=None):
         
         self.K = K
@@ -29,6 +29,7 @@ class ErdosGameEnv(gym.Env):
                "State generation probabilities do not add to 1"
         
         self.high_one_prob = high_one_prob
+        self.train_attacker=train_attacker
 
         self.adverse_set_prob = adverse_set_prob
         self.disj_supp_prob = disj_supp_prob
@@ -58,7 +59,7 @@ class ErdosGameEnv(gym.Env):
         self.observation_space = spaces.ErdosState(self.K, self.potential, self.weights, 
                                                   [self.unif_prob, self.geo_prob, self.diverse_prob, self.state_unif_prob],
                                                   self.high_one_prob, self.geo_high, self.unif_high,
-                                                  self.geo_ps)
+                                                  self.geo_ps, self.train_attacker)
         self.viewer = None
         
         # game_state is the state of the game, state is [A, B]

@@ -136,7 +136,7 @@ class EnvRegistry(object):
     def make(self, id, **kwargs):
         logger.info('Making new env: %s', id)
         spec = self.spec(id)
-        if id == "ErdosGame-v0":
+        if "ErdosGame" in id:
             assert kwargs != None, "Erdos game must take some input values"
             env = spec.make_erdos(**kwargs)
         else:
