@@ -55,11 +55,14 @@ class ErdosGameEnv(gym.Env):
         self.potential = potential
     
         # gym specific stuff
+        sample_dict = {"K" : K, "potential" : potential, "weights" : self.weights,
+                       "unif_prob": unif_prob, "geo_prob" : geo_prob, "diverse_prob" : diverse_prob,
+                       "state_unif_prob" : state_unif_prob, "high_one_prob" : high_one_prob, 
+                       "geo_high" : geo_high, "unif_high" : unif_high, "geo_ps" : geo_ps, 
+                        "train_attacker": train_attacker}
+
         self.action_space = spaces.Discrete(2)
-        self.observation_space = spaces.ErdosState(self.K, self.potential, self.weights, 
-                                                  [self.unif_prob, self.geo_prob, self.diverse_prob, self.state_unif_prob],
-                                                  self.high_one_prob, self.geo_high, self.unif_high,
-                                                  self.geo_ps, self.train_attacker)
+        self.observation_space = spaces.ErdosState(**sample_dict)
         self.viewer = None
         
         # game_state is the state of the game, state is [A, B]

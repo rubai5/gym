@@ -51,11 +51,13 @@ class ErdosGameAttackerEnv(gym.Env):
         self.potential = potential
     
         # gym specific stuff
+        sample_dict = {"K" : K, "potential" : potential, "weights" : self.weights,
+                       "unif_prob": unif_prob, "geo_prob" : geo_prob, "diverse_prob" : diverse_prob,
+                       "state_unif_prob" : state_unif_prob, "high_one_prob" : high_one_prob, 
+                       "geo_high" : geo_high, "unif_high" : unif_high, "geo_ps" : geo_ps, 
+                        "train_attacker": train_attacker}
         self.action_space = spaces.Discrete(self.K)
-        self.observation_space = spaces.ErdosState(self.K, self.potential, self.weights, 
-                                                  [self.unif_prob, self.geo_prob, self.diverse_prob, self.state_unif_prob],
-                                                  self.high_one_prob, self.geo_high, self.unif_high,
-                                                  self.geo_ps, self.train_attacker)
+        self.observation_space = spaces.ErdosState(**sample_dict)
         self.viewer = None
         
         # only one state
@@ -82,6 +84,39 @@ class ErdosGameAttackerEnv(gym.Env):
         
         return self.state, self.reward, self.done, {"steps": self.steps, "visited" : self.hash}
     
+
+    def split_level(self, idx):
+        # given a level idx, checks to see what the splitting at that level
+        # should be to ensure a more equal division
+        weighted = self.state*self.weights
+        l1 = self.state[idx]*self.weights[idx]
+        l2 = self.state[idx+1]*self.weights[idx+1]
+
+        pot1 = np.sum(weighted[:idx])
+        pot2 = np.sum(weighted[idx+2:])
+
+        if pot1 + l1 == pot2 + l2:
+            return (idx, self.state[idx], 0)
+
+        # Case 1: where first state has more potential
+        if pot1 + l1 > pot2 + l2:
+            num_pieces = self.state[idx]
+            if num_pieces == 0:
+                return (idx, 0, 0)
+            diff_pieces = (pot1 + l1 - pot2 - l2)/self.weights[idx]
+            # divide by 2 as piece subtracted from A and added to B
+            num_shift = min(int(diff_pieces/2), num_pieces)
+            return (idx, num_pieces - num_shift, num_shift)
+        
+        # Case 2:
+        if pot1 + l1 < pot2 + l2:
+            num_pieces = self.state[idx+1]
+            if num_pieces == 0:
+                return (idx+1, 0, 0)
+            diff_pieces = (pot2 + l2 - pot1 - l1)/self.weights[idx+1]
+            num_shift = min(int(diff_pieces/2), num_pieces)
+            return (idx+1, num_shift, num_pieces - num_shift)
+            
     
     def update_game_state(self, action):
         """
@@ -103,9 +138,15 @@ class ErdosGameAttackerEnv(gym.Env):
             idx = np.min(nonzeros)
         else:
             idx = action
+        # adjustment
+        idx = action
+
+        sidx, sA, sB = self.split_level(idx)
 
         A[:idx+1] = self.state[:idx+1]
         B[idx+1:] = self.state[idx+1:]
+        A[sidx] = sA
+        B[sidx] = sB
         print("action is", action)
         print("A and B are")
         print(A)

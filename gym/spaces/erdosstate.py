@@ -11,7 +11,8 @@ class ErdosState(gym.Space):
 
     """
     
-    def __init__(self, K, potential, weights, dist_probs, high_one_prob, geo_high, 
+    def __init__(self, K, potential, weights, unif_prob, geo_prob, diverse_prob,
+                 state_unif_prob, high_one_prob, geo_high, 
                  unif_high, geo_ps, train_attacker):
         
         assert K <= 40, "K is too large! Computing 2^-K may be very slow and inaccurate"
@@ -19,10 +20,10 @@ class ErdosState(gym.Space):
         self.K = K
         self.potential = potential
         self.weights = weights
-        self.geo_prob = dist_probs[0]
-        self.unif_prob = dist_probs[1]
-        self.diverse_prob = dist_probs[2]
-        self.state_unif_prob = dist_probs[3]
+        self.geo_prob = geo_prob
+        self.unif_prob = unif_prob
+        self.diverse_prob = diverse_prob
+        self.state_unif_prob = state_unif_prob
         self.high_one_prob = high_one_prob
         self.geo_high = geo_high
         self.unif_high = unif_high
