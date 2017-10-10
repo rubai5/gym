@@ -78,9 +78,28 @@ class ErdosGameAttackerEnv(gym.Env):
         """
         # update state and determine if game ends
         # return empty log for now
-        self.update_game_state(action)
-        print("updates: reward, done and state", self.reward, self.done)
-        print(self.state)
+        A, B = self.propose_sets(action)
+
+        # decide which set is destroyed and which is pushed
+        destroy, push = self.destroy_push(A, B)
+        self.state -= (destroy + push)
+        push = push[:-1]
+        push = np.insert(push, 0, 0)
+        self.state += push
+
+        assert(np.all(self.state >= 0)), print("State negative!", self.state)
+        
+        if self.state[-1] > 0:
+            self.attacker += 1
+            #self.past_rewards.append(-1)
+            self.reward = 1
+            self.done = True
+
+        if np.all(self.state == 0):
+            self.defender += 1
+            #self.past_rewards.append(1)
+            self.reward = -1
+            self.done = True
         
         return self.state, self.reward, self.done, {"steps": self.steps, "visited" : self.hash}
     
@@ -118,27 +137,13 @@ class ErdosGameAttackerEnv(gym.Env):
             return (idx+1, num_shift, num_pieces - num_shift)
             
     
-    def update_game_state(self, action):
+    def propose_sets(self, action):
         """
-        Function updates game_state, using state  (which is concat of [A, B])
+        Function returns A, B -- proposed split of environment
         """
-        print("state is", self.state, self.potential_fn(self.state))
         # Create sets from action
         A = np.zeros(self.K+1).astype("int")
         B = np.zeros(self.K+1).astype("int")
-        # making game easier
-        nonzeros = np.where(self.state >0)[0]
-        # if A has all nonzero terms
-        if action+1 > np.max(nonzeros):
-            # final nonzero included in B
-            idx = np.max(nonzeros) - 1
-        # if B has all nonzero terms
-        elif action < np.min(nonzeros):
-            # first nonzero included in A
-            idx = np.min(nonzeros)
-        else:
-            idx = action
-        # adjustment
         idx = action
 
         sidx, sA, sB = self.split_level(idx)
@@ -147,10 +152,6 @@ class ErdosGameAttackerEnv(gym.Env):
         B[idx+1:] = self.state[idx+1:]
         A[sidx] = sA
         B[sidx] = sB
-        print("action is", action)
-        print("A and B are")
-        print(A)
-        print(B)
         # record game state
         if self.hash != None:
             try:
@@ -161,8 +162,51 @@ class ErdosGameAttackerEnv(gym.Env):
         # record
         self.steps += 1
 
-        # decide which set is destroyed and which is pushed
-        destroy, push = self.destroy_push(A, B)
+        rand = np.random.binomial(1, 0.5)
+        if rand:
+            return A, B
+        else:
+            return B, A
+
+    
+    def destroy_push(self, A, B):
+        # picks sets to destroy and push
+        random = np.random.binomial(1, self.random_def)
+        if not random:
+            potA = self.potential_fn(A)
+            potB = self.potential_fn(B)
+            if potA >= potB:
+                return A, B
+            else:
+                return B, A
+        else:
+            randomized = np.random.binomial(1, 0.5)
+            if randomized:
+                return A, B
+            else:
+                return B, A   
+   
+    # functions to play in multiagent setting
+    def get_def_obs(self, action):
+        A, B = self.propose_sets(action)
+        return np.concatenate([A, B]) 
+   
+    def def_state_update(self, def_obs, action):
+        # takes in defender observation and action and
+        # updates step accordingly, returning same info
+        # as step
+
+        # get state that is destroyed and pushed
+        if action == 0:
+            destroy = def_obs[:self.K+1]
+            push = def_obs[self.K+1:]
+        elif action == 1:
+            destroy = def_obs[self.K+1:]
+            push = def_obs[:self.K+1]
+        else:
+            raise ValueError("Invalid Defender Action", action)
+
+        # update state accordingly
         self.state -= (destroy + push)
         push = push[:-1]
         push = np.insert(push, 0, 0)
@@ -181,25 +225,10 @@ class ErdosGameAttackerEnv(gym.Env):
             #self.past_rewards.append(1)
             self.reward = -1
             self.done = True
-    
-    def destroy_push(self, A, B):
-        # picks sets to destroy and push
-        random = np.random.binomial(1, self.random_def)
-        if not random:
-            potA = self.potential_fn(A)
-            potB = self.potential_fn(B)
-            if potA >= potB:
-                return A, B
-            else:
-                return B, A
-        else:
-            randomized = np.random.binomial(1, 0.5)
-            if randomized:
-                return A, B
-            else:
-                return B, A   
-    
-    
+        
+        return self.state, self.reward, self.done, {"steps": self.steps, "visited" : self.hash}
+
+ 
     def _reset(self):
         """
         Note: when playing adversarially, call set_model_state
