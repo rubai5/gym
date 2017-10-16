@@ -17,7 +17,7 @@ class ErdosGameEnv(gym.Env):
     
     def __init__(self, K, potential, unif_prob, 
                  geo_prob, diverse_prob, state_unif_prob, high_one_prob,
-                adverse_set_prob, disj_supp_prob, geo_high, unif_high, train_attacker=False,
+                adverse_set_prob, disj_supp_prob, geo_high, unif_high, train_attacker=False, cattacker=False,
                 geo_ps=[0.45, 0.5, 0.6, 0.7, 0.8], hash_states=None):
         
         self.K = K
@@ -30,6 +30,7 @@ class ErdosGameEnv(gym.Env):
         
         self.high_one_prob = high_one_prob
         self.train_attacker=train_attacker
+        self.cattacker=cattacker
 
         self.adverse_set_prob = adverse_set_prob
         self.disj_supp_prob = disj_supp_prob
@@ -59,7 +60,7 @@ class ErdosGameEnv(gym.Env):
                        "unif_prob": unif_prob, "geo_prob" : geo_prob, "diverse_prob" : diverse_prob,
                        "state_unif_prob" : state_unif_prob, "high_one_prob" : high_one_prob, 
                        "geo_high" : geo_high, "unif_high" : unif_high, "geo_ps" : geo_ps, 
-                        "train_attacker": train_attacker}
+                        "train_attacker": train_attacker, "cattacker" : cattacker}
 
         self.action_space = spaces.Discrete(2)
         self.observation_space = spaces.ErdosState(**sample_dict)

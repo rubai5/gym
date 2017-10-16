@@ -16,6 +16,12 @@ register(
 )
 
 
+register(
+    id='ErdosGameCAttacker-v0',
+    entry_point='gym.envs.maithra:ErdosGameCAttackerEnv',
+    max_episode_steps=100,
+)
+
 # Algorithmic
 # ----------------------------------------
 
