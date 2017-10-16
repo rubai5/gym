@@ -17,7 +17,7 @@ class ErdosGameAttackerEnv(gym.Env):
     
     def __init__(self, K, potential, unif_prob, 
                  geo_prob, diverse_prob, state_unif_prob, high_one_prob,
-                geo_high, unif_high, random_def, train_attacker=True,
+                geo_high, unif_high, random_def, train_attacker=True, cattacker=False,
                 geo_ps=[0.45, 0.5, 0.6, 0.7, 0.8], hash_states=None):
         
         self.K = K
@@ -28,6 +28,7 @@ class ErdosGameAttackerEnv(gym.Env):
         assert(self.state_unif_prob + self.diverse_prob + self.geo_prob + self.unif_prob == 1), \
                "State generation probabilities do not add to 1"
         self.train_attacker=train_attacker
+        self.cattacker=cattacker
         self.random_def = random_def
         
         self.high_one_prob = high_one_prob
@@ -55,7 +56,7 @@ class ErdosGameAttackerEnv(gym.Env):
                        "unif_prob": unif_prob, "geo_prob" : geo_prob, "diverse_prob" : diverse_prob,
                        "state_unif_prob" : state_unif_prob, "high_one_prob" : high_one_prob, 
                        "geo_high" : geo_high, "unif_high" : unif_high, "geo_ps" : geo_ps, 
-                        "train_attacker": train_attacker}
+                        "train_attacker": train_attacker, "cattacker" : cattacker}
         self.action_space = spaces.Discrete(self.K)
         self.observation_space = spaces.ErdosState(**sample_dict)
         self.viewer = None
@@ -108,33 +109,22 @@ class ErdosGameAttackerEnv(gym.Env):
         # given a level idx, checks to see what the splitting at that level
         # should be to ensure a more equal division
         weighted = self.state*self.weights
-        l1 = self.state[idx]*self.weights[idx]
-        l2 = self.state[idx+1]*self.weights[idx+1]
-
+        l = self.state[idx]*self.weights[idx]
         pot1 = np.sum(weighted[:idx])
-        pot2 = np.sum(weighted[idx+2:])
+        pot2 = np.sum(weighted[idx+1:])
 
-        if pot1 + l1 == pot2 + l2:
+        if pot1 + l <= pot2:
             return (idx, self.state[idx], 0)
 
         # Case 1: where first state has more potential
-        if pot1 + l1 > pot2 + l2:
+        if pot1 + l > pot2:
             num_pieces = self.state[idx]
             if num_pieces == 0:
                 return (idx, 0, 0)
-            diff_pieces = (pot1 + l1 - pot2 - l2)/self.weights[idx]
+            diff_pieces = (pot1 + l - pot2)/self.weights[idx]
             # divide by 2 as piece subtracted from A and added to B
             num_shift = min(int(diff_pieces/2), num_pieces)
-            return (idx, num_pieces - num_shift, num_shift)
-        
-        # Case 2:
-        if pot1 + l1 < pot2 + l2:
-            num_pieces = self.state[idx+1]
-            if num_pieces == 0:
-                return (idx+1, 0, 0)
-            diff_pieces = (pot2 + l2 - pot1 - l1)/self.weights[idx+1]
-            num_shift = min(int(diff_pieces/2), num_pieces)
-            return (idx+1, num_shift, num_pieces - num_shift)
+            return (idx, num_pieces - num_shift, num_shift)     
             
     
     def propose_sets(self, action):
