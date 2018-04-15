@@ -22,6 +22,12 @@ register(
     max_episode_steps=100,
 )
 
+register(
+    id='ErdosGameSmallK-v0',
+    entry_point='gym.envs.maithra:ErdosGameSmallKEnv',
+    max_episode_steps=100,
+)
+
 # Algorithmic
 # ----------------------------------------
 
