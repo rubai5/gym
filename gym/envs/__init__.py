@@ -28,6 +28,12 @@ register(
     max_episode_steps=100,
 )
 
+register(
+    id='SelfPlayErdosGame-v0',
+    entry_point='gym.envs.maithra:SelfPlayErdosGameEnv',
+    max_episode_steps=100,
+)
+
 # Algorithmic
 # ----------------------------------------
 
