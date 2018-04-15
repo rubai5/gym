@@ -123,7 +123,8 @@ class ErdosState(gym.Space):
         p = ps[p_idx]
         for i in range(max(1000, int(1/(100000*self.weights[0])))):
             # get pieces at different levels, highest level = self.geo_high
-            levels = np.random.geometric(p, int(np.min([100000, 1.0/self.weights[0]]))) - 1
+            assert self.K+1 < 30, "K too high, cannot use geo sampler"
+            levels = np.random.geometric(p, int(1.0/self.weights[0])) - 1
             idxs = np.where(levels < self.geo_high)
             levels = levels[idxs]
             
